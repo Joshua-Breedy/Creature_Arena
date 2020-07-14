@@ -34,13 +34,13 @@ def creature_names(x):
 
 # Sets the creature's attack minimum value
 def creature_attack_min(x):
-    attack_min = [10, 12, 14, 16]
+    attack_min = [10, 12, 15, 17]
     return attack_min[x]
 
 
 # Sets the creature's attack maximum value
 def creature_attack_max(x):
-    attack_max = [15, 17, 19, 21]
+    attack_max = [15, 15, 20, 20]
     return attack_max[x]
 
 
@@ -50,12 +50,29 @@ def creature_health(x):
     return health[x]
 
 
+# Sets the creature's description
+def creature_description(x):
+    creature_descript = ['An 8 foot tall creature, a Duskfang is all black and posesses genetics from both a duck and '
+                         '\nbat. A Duskfang\'s special attack is The Whirl, can flap its wings in a whirlwind position '
+                         '\nto attack a player.',
+                         'A Slagchild is a transparent wolf-like creature with 2 heads that possesses a Superbite '
+                         '\nattack. Using superbite it can attack an enemy from up to 20 feet away.',
+                         'The Dawnseeker is one of the feared creatures in the land, with it possesses the Seeker '
+                         '\nspecial attack to smell and attack a person from a mile away. A cross between a bloodhound '
+                         '\nand a jaguar, a dawnseeker has mastered hunting and stealth',
+                         'A Foulthing is a mud-based creature that releases a liquid that causes burns and rashes on '
+                         '\nan opponent\'s skin. It\'s specialty is shapeshifting into the ground, locking and sticking'
+                         '\n an enemy in place.']
+    return creature_descript[x]
+
+
 # Sets the attributes for a new creature that appears after the previous one has died
 def creature_change(x):
     creature['name'] = creature_names(x)
     creature['health'] = creature_health(x)
     creature['attack_min'] = creature_attack_min(x)
     creature['attack_max'] = creature_attack_max(x)
+    creature['description'] = creature_description(x)
 
 
 # Sets the attributes for the final boss creature
@@ -64,6 +81,10 @@ def creature_boss():
     creature['health'] = 500
     creature['attack_min'] = 20
     creature['attack_max'] = 40
+    creature['description'] = 'A faceless large green worm-like creature, the Ender measures 60 feet in length. ' \
+                              '\nEquipped with a snake-like tongue, the Ender is covered in a spikey outer shell that ' \
+                              '\ncan pierce flesh. It\'s special attack is the Blitz, where it can shoot up and around ' \
+                              '\nan enemy at 50 mph. '
 
 
 # Function to go to the next level, uses the round counter value and the random integer x value
@@ -88,10 +109,10 @@ def next_level(counter, x):
 
 # Increases the warrior's attributes when a new creature is brought in
 def warrior_stats_improve():
-    warrior['health'] = default_health + (25 * len(creatures_killed))
+    warrior['health'] = default_health + (30 * len(creatures_killed))
     warrior['heal'] += 2
-    warrior['attack_max'] += 5
-    warrior['attack_min'] += 5
+    warrior['attack_max'] += 8
+    warrior['attack_min'] += 8
 
 
 print("WELCOME TO CREATURE ARENA!")
@@ -108,12 +129,17 @@ while game_running:
     new_round = True
     # the initial health value of the warrior is set
     default_health = 100
+    # used to count special attacks (maximum is 3 per creature)
+    special_attack_counter = 0
     # sets the default values for the warrior in a dictionary
     warrior = {'name': 'warrior', 'attack_min': 15, 'attack_max': 17, 'heal': 16, 'health': 100, 'heals_left': heals}
     # if it is the first round, send out the default creature(Anglefin)
     if gen_counter == 0:
-        creature = {'name': "Anglefin", 'attack_min': 5, 'attack_max': 10,
-                    'health': 100}
+        creature = {'name': 'Anglefin', 'attack_min': 5, 'attack_max': 10,
+                    'health': 100, 'description': 'A large toad-like creature, an Anglefin oddly possesses a large '
+                                                  '\ndorsal fin that shoots out darts as a defense mechanism. It\'s '
+                                                  '\nspecial attack is the Sonic Croak, which can cause dizziness, '
+                                                  '\npopped eardrums, and shattered glass'}
     # if the first creature has died, set the next creature's values
     else:
         creature = {'name': creature_names(x), 'attack_min': creature_attack_min(x),
@@ -145,12 +171,13 @@ while game_running:
         print('1) Attack')
         print('2) Heal')
         print('3) Special Attack')
+        print('D) Monster Description')
         print('X) Exit Game')
         # displays these options if a player has already played before
-        if game_results is None:
+        if len(game_results) != 0:
             print('Y) Show Results')
         # displays these options if there is a creature already killed
-        if creatures_killed is None:
+        if len(creatures_killed) != 0:
             print('A) Show Creatures Killed')
         print('---' * 7)
         # sets whatever the user inputs to uppercase lettering
@@ -181,6 +208,8 @@ while game_running:
                 gen_counter += counter
                 # resets counter
                 counter = 0
+                # resets special attack counter
+                special_attack_counter = 0
                 # resets warrior's heals left
                 warrior['heals_left'] = 5
             # if the creature has no health points left and is not the boss, then the warrior has won
@@ -211,11 +240,14 @@ while game_running:
             # increases round counter by one
             counter += 1
             # if the previous monster's rounds are less than 12 but greater than 0, the special attack can be used
-            if 12 > round_counter[-1] > 0:
+            if 12 > round_counter[-1] > 0 and special_attack_counter < 3:
                 # creature's health is the creature's health minus the warrior's attack which is doubled as a special
                 # move
                 creature['health'] = creature['health'] - (
                         calculate_warrior_attack(warrior['attack_min'], warrior['attack_max']) * 2)
+                warrior['health'] = int(warrior['health'] - (
+                        calculate_creature_attack(creature['attack_min'], creature['attack_max']) / 2))
+                special_attack_counter += 1
                 # if the creature has no health points and is not the boss, if statement occurs
                 if creature['health'] <= 0 and creature['name'] != 'Ender':
                     # adds creature to creatures killed list
@@ -226,12 +258,20 @@ while game_running:
                     gen_counter += counter
                     # resets counter
                     counter = 0
+                    # resets special attack counter
+                    special_attack_counter = 0
                 # if the creature has no health points and is the boss, the warrior has won
                 elif creature['health'] <= 0 and creature['name'] == 'Ender':
                     warrior_won = True
             # runs else if the last creature was no defeated in less than 12 rounds or there was no previous creature
-            else:
+            elif round_counter[-1] > 12 or round_counter[-1] == 0:
                 print("Only available after the last creature has been defeated before 12 rounds")
+            # removes round counted and executes if three special moves have already been used
+            else:
+                counter -= 1
+                print("Only three special moves can be used per creature")
+        elif warrior_choice == 'D':
+            print(creature['description'])
         # sets actions if the user choices 'X' as an option
         elif warrior_choice == 'X':
             # exits the game
@@ -262,7 +302,7 @@ while game_running:
         if warrior_won == False and creature_won == False:
             print(warrior['name'])
             print('Health: ' + str(warrior['health']))
-            print(str('Heals left: '+ warrior['heals_left']))
+            print('Heals left: ' + str(warrior['heals_left']))
             print(creature['name'])
             print('Health: ' + str(creature['health']))
         # else if statement that saves results and stops the round if the warrior wins
